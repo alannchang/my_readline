@@ -3,19 +3,46 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-int storage = 0;
-int READLINE_READ_SIZE;
+
+// Number of characters read will be set by the global variable READLINE_READ_SIZE
+int READLINE_READ_SIZE = 512;
+
+// store stuff here ¯\_(ツ)_/¯
+int storage;
+
+void my_strcat(char* dest, const char* src){
+
+    while(*dest) dest++;
+
+    while(*src) {
+        *dest = *src;
+        src++;
+        dest++;
+    }
+
+    *dest = '\0';
+}
+
+void init_my_readline() {
+    
+}
 
 char* my_readline(int fd){
+    char* result = "";
     char* buffer;
-    while (read(fd, buffer, 1) > 0 && buffer ) {
+    while (read(fd, &buffer, READLINE_READ_SIZE) == READLINE_READ_SIZE) {
+        // check for newline character
+        while (*buffer) {
+            if (*buffer == '\n') {
+                *buffer = '\0';
+                my_strcat(result, buffer);
+                break;
+            }
+        }
 
     }
 
-
-
-
-    return 0;
+    return result;
 }
 
 
