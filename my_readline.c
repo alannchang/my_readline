@@ -7,32 +7,10 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1000;
+int READLINE_READ_SIZE = 100;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* storage = NULL;
-
-char *my_strncat(char *dest, const char *src, size_t n) {
-    if (dest == NULL || src == NULL) {
-        return NULL;
-    }
-
-    char *temp = dest;
-    size_t i;
-
-    while (*temp) {
-        temp++;
-    }
-
-    for (i = 0; i < n && src[i] != '\0'; ++i) {
-        temp[i] = src[i];
-    }
-
-    temp[i] = '\0';
-
-    return dest;
-    
-}
 
 // init (or reinitialize) global variable
 void init_my_readline(){
@@ -52,7 +30,7 @@ char* my_readline(int fd) {
     }
 
     ssize_t read_result; // number of bytes read
-    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) > 0 && end_line == false) {
+    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) > -1 && end_line == false) {
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(buffer);
@@ -66,7 +44,7 @@ char* my_readline(int fd) {
 
         for (int i = 0; i < read_result; i++) {
             if (buffer[i] == '\n') {
-                read_result = i + 1;
+                read_result = i;
                 end_line = true;
                 break;
             } 
@@ -103,16 +81,15 @@ char* my_readline(int fd) {
 }
 
 
-
 int main(int ac, char **av)
 {
   char *str = NULL;
 
-  int fd = open("./file.txt", O_RDONLY);
+  int fd = open("test.txt", O_RDONLY);
   while ((str = my_readline(fd)) != NULL)
   {
       printf("%s\n", str);
-      free(str);
+      init_my_readline();
   }
   close(fd);
   //
