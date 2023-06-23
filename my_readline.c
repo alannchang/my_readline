@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <stdbool.h>
 
 #include <string.h>
 
@@ -35,7 +36,8 @@ char *my_strncat(char *dest, const char *src, size_t n) {
 
 // init (or reinitialize) global variable
 void init_my_readline(){
-    if (storage != NULL) storage = NULL;
+    if (storage != NULL) free(storage);
+    storage = NULL;
 }
 
 char* my_readline(int fd) {
@@ -43,13 +45,14 @@ char* my_readline(int fd) {
     unsigned int total_bytes = 0; // keep track of total size
     char* temp = NULL; // stores stuff
     char* buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char));
+    bool end_line = false;
     if (buffer == NULL) {
         perror("Memory allocation failed");
         return NULL;
     }
 
     ssize_t read_result; // number of bytes read
-    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) > 0) {
+    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) > 0 && end_line == false) {
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(buffer);
@@ -59,6 +62,14 @@ char* my_readline(int fd) {
             // End of file reached
             free(buffer);
             return NULL;
+        }
+
+        for (int i = 0; i < read_result; i++) {
+            if (buffer[i] == '\n') {
+                read_result = i + 1;
+                end_line = true;
+                break;
+            } 
         }
         
         total_bytes += read_result;
@@ -83,6 +94,7 @@ char* my_readline(int fd) {
 
         // Update storage to point to the new combined data in temp
         storage = temp;
+        if (end_line == true) break;
     }
 
     storage[total_bytes] = '\0';
@@ -91,24 +103,22 @@ char* my_readline(int fd) {
 }
 
 
-int main(int ac, char **av) {
-    char *str = NULL;
-    int fd = open("test.txt", O_RDONLY);
-    str = my_readline(fd);
-    printf("%s\n", str);
-    free(str);
 
-//   while ((str = my_readline(fd)) != NULL) {
-//         printf("%s\n", str);
-//         free(str);
-//     }
-//     close(fd);
-    return 0;
-} 
+int main(int ac, char **av)
+{
+  char *str = NULL;
 
+  int fd = open("./file.txt", O_RDONLY);
+  while ((str = my_readline(fd)) != NULL)
+  {
+      printf("%s\n", str);
+      free(str);
+  }
+  close(fd);
   //
   //  Yes it's also working with stdin :-)
   //  printf("%s", my_readline(0));
   //
 
- 
+  return 0;
+}
