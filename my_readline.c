@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 
+#include <string.h>
+
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 10;
+int READLINE_READ_SIZE = 1000;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* storage = NULL;
@@ -33,20 +35,21 @@ char *my_strncat(char *dest, const char *src, size_t n) {
 
 // init (or reinitialize) global variable
 void init_my_readline(){
-
+    if (storage != NULL) storage = NULL;
 }
 
 char* my_readline(int fd) {
 
-    unsigned int count = 0;
+    unsigned int total_bytes = 0; // keep track of total size
+    char* temp = NULL; // stores stuff
     char* buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char));
     if (buffer == NULL) {
         perror("Memory allocation failed");
         return NULL;
     }
 
-    ssize_t read_result;
-    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) == READLINE_READ_SIZE) {
+    ssize_t read_result; // number of bytes read
+    while((read_result = read(fd, buffer, READLINE_READ_SIZE)) > 0) {
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(buffer);
@@ -57,17 +60,34 @@ char* my_readline(int fd) {
             free(buffer);
             return NULL;
         }
-        count += read_result;
-        printf("%s", buffer);
-        free(buffer);
-        char* buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char));
+        
+        total_bytes += read_result;
 
+        // Allocate new memory for temp, which will store the new combined data
+        temp = malloc((total_bytes + 1) * sizeof(char));
+        if (temp == NULL) {
+            perror("Memory allocation failed");
+            free(storage);
+            free(buffer);
+            return NULL;
+        }
 
+        // Copy the existing data from storage to temp
+        if (storage != NULL) {
+            memcpy(temp, storage, total_bytes - read_result);
+            free(storage); // Free the old storage memory
+        }
 
+        // Copy the new data from buffer to temp
+        memcpy(temp + total_bytes - read_result, buffer, read_result);
+
+        // Update storage to point to the new combined data in temp
+        storage = temp;
     }
 
-    buffer[READLINE_READ_SIZE] = '\0';
-    return buffer;
+    storage[total_bytes] = '\0';
+    free(buffer);
+    return storage;
 }
 
 
