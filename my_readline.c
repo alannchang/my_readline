@@ -39,6 +39,7 @@ char* my_readline(int fd) {
 
     ssize_t read_result; // number of bytes read
     while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
+        printf("Read bytes = %zd\n", read_result);
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(rd_buffer);
