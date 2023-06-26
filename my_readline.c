@@ -7,17 +7,17 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 2;
+int READLINE_READ_SIZE = 1000;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* leftovers = NULL;
 
 // init (or reinitialize) global variable
-void init_my_readline(char* buffer, char* leftovers, ssize_t read_result){
-    // code leftovers to hold whatever comes after '\n'
-    leftovers = malloc(((strlen(buffer) + 1) * sizeof(char)));
+void init_my_readline(char* buffer, ssize_t read_result){
+    size_t leftover_length = strlen(buffer) - read_result - 1;
+    leftovers = malloc((leftover_length + 1) * sizeof(char));
     memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
-    leftovers[strlen(buffer) - read_result - 1] = '\0';
+    leftovers[leftover_length] = '\0';
 }
 
 char* my_readline(int fd) {
@@ -38,7 +38,7 @@ char* my_readline(int fd) {
     }
 
     ssize_t read_result; // number of bytes read
-    while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1 && end_line == false) {
+    while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(rd_buffer);
@@ -71,8 +71,7 @@ char* my_readline(int fd) {
         }
 
         // Copy the existing data from storage to temp
-        if (rd_line_buffer != NULL)
-        {
+        if (rd_line_buffer != NULL) {
             memcpy(temp, rd_line_buffer, total_bytes - read_result);
             free(rd_line_buffer);  // Free the old storage memory
         }
@@ -85,7 +84,7 @@ char* my_readline(int fd) {
 
         // if '\n' was found, store the rest of the buffer in leftovers
         if (end_line == true) {
-            init_my_readline(rd_buffer, leftovers, read_result);   
+            init_my_readline(rd_buffer, read_result);   
             break;
         }
     }
