@@ -13,15 +13,23 @@ int READLINE_READ_SIZE = 2;
 char* leftovers = NULL;
 
 // init (or reinitialize) global variable
-void init_my_readline(){
-    // code leftovers to hold whatever comes after '\n'.  That's why things are cutting off.
-    // not sure why the last line is not printing though.
+void init_my_readline(char* buffer, char* leftovers, ssize_t read_result){
+    // code leftovers to hold whatever comes after '\n'
+    leftovers = malloc(((strlen(buffer) + 1) * sizeof(char)));
+    memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
+    leftovers[strlen(buffer) - read_result - 1] = '\0';
 }
 
 char* my_readline(int fd) {
 
-    unsigned int total_bytes = 0; // keep track of total size
     char* rd_line_buffer = NULL;  // stores 'line' to be returned by my_readline
+    unsigned int total_bytes = 0; // keep track of total size
+    if (leftovers != NULL) {
+        rd_line_buffer = leftovers;
+        total_bytes = strlen(leftovers);
+        leftovers = NULL;
+    }
+    
     char* rd_buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char)); // buffer used for read()
     bool end_line = false; // set to 'true' when '\n' encountered
     if (rd_buffer == NULL) {
@@ -40,6 +48,8 @@ char* my_readline(int fd) {
             free(rd_buffer);
             return NULL;
         }
+
+        rd_buffer[read_result] = '\0';
 
         for (int i = 0; i < read_result; i++) { // check for '\n'
             if (rd_buffer[i] == '\n') {
@@ -72,8 +82,12 @@ char* my_readline(int fd) {
 
         // Update storage to point to the new combined data in temp
         rd_line_buffer = temp;
-        if (end_line == true) break;
-        // code memcpy to leftover here 
+
+        // if '\n' was found, store the rest of the buffer in leftovers
+        if (end_line == true) {
+            init_my_readline(rd_buffer, leftovers, read_result);   
+            break;
+        }
     }
 
     rd_line_buffer[total_bytes] = '\0';
