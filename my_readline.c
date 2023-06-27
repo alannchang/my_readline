@@ -46,13 +46,8 @@ char* my_readline(int fd) {
 
     ssize_t read_result; // number of bytes read
     while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
-        // printf("Read bytes = %zd\n", read_result);
-        if (read_result == -1) { // handle errors
-            perror("Read error");
-            free(rd_buffer);
-            return NULL;
 
-        } else if (read_result == 0 && total_bytes == 0) { // End of file reached
+        if (read_result == 0 && total_bytes == 0) { // End of file reached
             free(rd_buffer);
             return NULL;
         
@@ -96,6 +91,11 @@ char* my_readline(int fd) {
             store_leftovers(rd_buffer, read_result);   
             break;
         }
+    }
+    if (read_result == -1) { // handle invalid file descriptor
+        perror("Read error");
+        free(rd_buffer);
+        return NULL;
     }
 
     rd_line_buffer[total_bytes] = '\0';
