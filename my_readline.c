@@ -7,7 +7,7 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 25;
+int READLINE_READ_SIZE = 300;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* leftovers = NULL;
@@ -46,16 +46,17 @@ char* my_readline(int fd) {
 
     ssize_t read_result; // number of bytes read
     while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
-        printf("Read bytes = %zd\n", read_result);
+        // printf("Read bytes = %zd\n", read_result);
         if (read_result == -1) { // handle errors
             perror("Read error");
             free(rd_buffer);
             return NULL;
 
-        } else if (read_result == 0) { // End of file reached
+        } else if (read_result == 0 && total_bytes == 0) { // End of file reached
             free(rd_buffer);
             return NULL;
-        }
+        
+        } else if (read_result == 0) break;  // End of file reached but need to return rd_ln_buffer
 
         rd_buffer[read_result] = '\0';
 
