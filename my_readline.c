@@ -7,13 +7,20 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1000;
+int READLINE_READ_SIZE = 25;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* leftovers = NULL;
 
 // init (or reinitialize) global variable
-void init_my_readline(char* buffer, ssize_t read_result){
+void init_my_readline() {
+    if (leftovers != NULL) {
+        free(leftovers);
+        leftovers = NULL;
+    }
+}
+
+void store_leftovers(char* buffer, ssize_t read_result) {
     size_t leftover_length = strlen(buffer) - read_result - 1;
     leftovers = malloc((leftover_length + 1) * sizeof(char));
     memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
@@ -85,7 +92,7 @@ char* my_readline(int fd) {
 
         // if '\n' was found, store the rest of the buffer in leftovers
         if (end_line == true) {
-            init_my_readline(rd_buffer, read_result);   
+            store_leftovers(rd_buffer, read_result);   
             break;
         }
     }
