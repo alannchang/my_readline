@@ -3,16 +3,14 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdbool.h>
-
 #include <string.h>
-
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1024;
+int READLINE_READ_SIZE = 1000;
 
-// global variable to store stuff that comes after '\n' encountered
+// store stuff here? ¯\_(ツ)_/¯
 char* leftovers = NULL;
 
-// used to "init (or reinitialize) global variable"
+// init (or reinitialize) global variable
 void init_my_readline() {
     if (leftovers != NULL) {
         free(leftovers);
@@ -20,9 +18,8 @@ void init_my_readline() {
     }
 }
 
-// add everything after '\n' from read buffer to leftovers variable
 void store_leftovers(char* buffer, ssize_t read_result) {
-    size_t leftover_length = strlen(buffer) - read_result - 1;
+    ssize_t leftover_length = strlen(buffer) - read_result - 1;
     leftovers = malloc((leftover_length + 1) * sizeof(char));
     memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
     leftovers[leftover_length] = '\0';
@@ -30,36 +27,44 @@ void store_leftovers(char* buffer, ssize_t read_result) {
 
 char* my_readline(int fd) {
 
-    char* rd_line_buffer = NULL;  // 'line' to be returned by my_readline
-    size_t total_bytes = 0; // keep track of total
-
-    if (leftovers != NULL) { // if we got leftovers, add them to readline buffer
+    if (fd == -1) return NULL;
+    
+    char* rd_line_buffer = NULL;  // stores 'line' to be returned by my_readline
+    unsigned int total_bytes = 0; // keep track of total size
+    if (leftovers != NULL) {
         rd_line_buffer = leftovers;
         total_bytes = strlen(leftovers);
         leftovers = NULL;
     }
     
     char* rd_buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char)); // buffer used for read()
-    bool end_line = false; // 'true' when '\n' encountered
+    bool end_line = false; // set to 'true' when '\n' encountered
     if (rd_buffer == NULL) {
         perror("Memory allocation failed");
         return NULL;
     }
 
-    ssize_t bytes_read;
-    while ((bytes_read = read(fd, rd_buffer, READLINE_READ_SIZE)) > 0) { // read in READLINE_READ_SIZE chunks
+    ssize_t read_result; // number of bytes read
+    while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
+        // printf("Read bytes = %zd\n", read_result);
 
-        rd_buffer[bytes_read] = '\0';
+        if (read_result == 0 && total_bytes == 0) { // End of file reached
+            free(rd_buffer);
+            free(rd_line_buffer);
+            return NULL;
+        
+        } else if (read_result == 0) break;  // End of file reached but need to return rd_ln_buffer
+        rd_buffer[read_result] = '\0';
 
-        for (int i = 0; i < bytes_read; i++) {  // check for '\n' in read buffer
+        for (int i = 0; i < read_result; i++) { // check for '\n'
             if (rd_buffer[i] == '\n') {
-                bytes_read = i;
+                read_result = i;
                 end_line = true;
                 break;
             }
         }
-
-        total_bytes += bytes_read;
+        
+        total_bytes += read_result;
 
         // Allocate new memory for temp, which will store the new combined data
         char* temp = malloc((total_bytes + 1) * sizeof(char));
@@ -70,28 +75,29 @@ char* my_readline(int fd) {
             return NULL;
         }
 
-        if (rd_line_buffer != NULL) { // Copy the existing data from storage to temp
-            memcpy(temp, rd_line_buffer, total_bytes - bytes_read);
+        // Copy the existing data from storage to temp
+        if (rd_line_buffer != NULL) {
+            memcpy(temp, rd_line_buffer, total_bytes - read_result);
             free(rd_line_buffer);  // Free the old storage memory
         }
 
-        memcpy(temp + total_bytes - bytes_read, rd_buffer, bytes_read); // Copy the new data from buffer to temp
+        // Copy the new data from buffer to temp
+        memcpy(temp + total_bytes - read_result, rd_buffer, read_result);
 
-        rd_line_buffer = temp; // Update storage to point to the new combined data in temp
+        // Update storage to point to the new combined data in temp
+        rd_line_buffer = temp;
 
-        if (end_line) { // if '\n' was found, store the rest of the buffer in leftovers
-            store_leftovers(rd_buffer, bytes_read);
+        // if '\n' was found, store the rest of the buffer in leftovers
+        if (end_line == true) {
+            store_leftovers(rd_buffer, read_result);   
             break;
         }
     }
 
-    if (bytes_read == 0 && total_bytes == 0) {  // End of file reached
-        free(rd_buffer);
-        return NULL;
-
-    } else if (bytes_read == -1) {  // handle invalid file descriptor
+    if (read_result == -1) {
         perror("Read error");
         free(rd_buffer);
+        free(rd_line_buffer);
         return NULL;
     }
 
@@ -111,11 +117,5 @@ int main(int ac, char **av)
       printf("%s\n", str);
       free(str);
   }
-  close(fd);
-  //
-  //  Yes it's also working with stdin :-)
-  //  printf("%s", my_readline(0));
-  //
-
   return 0;
 }
