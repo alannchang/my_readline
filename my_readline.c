@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1000;
+int READLINE_READ_SIZE = 1;
 
 // store stuff here? ¯\_(ツ)_/¯
 char* leftovers = NULL;
@@ -18,8 +18,8 @@ void init_my_readline() {
     }
 }
 
-void store_leftovers(char* buffer, ssize_t read_result) {
-    ssize_t leftover_length = strlen(buffer) - read_result - 1;
+void store_leftovers(char* buffer, size_t read_result) {
+    size_t leftover_length = strlen(buffer) - read_result - 1;
     leftovers = malloc((leftover_length + 1) * sizeof(char));
     memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
     leftovers[leftover_length] = '\0';
@@ -27,7 +27,10 @@ void store_leftovers(char* buffer, ssize_t read_result) {
 
 char* my_readline(int fd) {
 
-    if (fd == -1) return NULL;
+    if (fd == -1) {
+        perror("File descriptor error");
+        return NULL;
+    }
     
     char* rd_line_buffer = NULL;  // stores 'line' to be returned by my_readline
     unsigned int total_bytes = 0; // keep track of total size
