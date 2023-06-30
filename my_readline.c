@@ -6,7 +6,7 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1;
+int READLINE_READ_SIZE = 1000;
 
 // global variable to store stuff that comes after '\n' encountered
 char* leftovers = NULL;
@@ -21,7 +21,7 @@ void init_my_readline() {
 
 // add everything after '\n' from read buffer to leftovers variable
 void store_leftovers(char* buffer, size_t read_result) {
-    ssize_t leftover_length = strlen(buffer) - read_result - 1;
+    size_t leftover_length = strlen(buffer) - read_result - 1;
     leftovers = malloc((leftover_length + 1) * sizeof(char));
     memcpy(leftovers, buffer + read_result + 1, strlen(buffer) - read_result);
     leftovers[leftover_length] = '\0';
@@ -36,10 +36,27 @@ char* my_readline(int fd) {
     
     char* rd_line_buffer = NULL;  // stores 'line' to be returned by my_readline
     size_t total_bytes = 0; // keep track of total
-    if (leftovers != NULL) { // if we got leftovers, add them to readline buffer
-        rd_line_buffer = leftovers;
-        total_bytes = strlen(leftovers);
-        leftovers = NULL;
+
+    if (leftovers != NULL) { // if we got leftovers, check for '\n'
+        int leftover_bytes = -1;
+        for (int i = 0; i < strlen(leftovers); i++) {
+            if (leftovers[i] == '\n') {
+                leftover_bytes = i;
+                break;
+            }
+        }
+        printf("leftover bytes: %d", leftover_bytes);
+        if (leftover_bytes > 0) {
+            char* leftover_temp = malloc(((leftover_bytes + 1) * sizeof(char)));
+            memcpy(leftover_temp, leftovers, leftover_bytes);
+            leftover_temp[leftover_bytes] = '\0';
+            leftovers = leftovers + leftover_bytes;
+            return leftover_temp;
+        } else {
+            rd_line_buffer = leftovers;
+            total_bytes = strlen(leftovers);
+            leftovers = NULL;
+        }
     }
     
     char* rd_buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char)); // buffer used for read()
@@ -51,15 +68,13 @@ char* my_readline(int fd) {
 
     ssize_t read_result; // number of bytes read
     while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
-        // printf("Read bytes = %zd\n", read_result);
-
+        
         if (read_result == 0 && total_bytes == 0) { // End of file reached
             free(rd_buffer);
             free(rd_line_buffer);
             return NULL;
         
         } else if (read_result == 0) break;  // End of file reached but need to return rd_line_buffer
-
         rd_buffer[read_result] = '\0';
 
         for (int i = 0; i < read_result; i++) { // check for '\n' in read buffer
@@ -86,9 +101,7 @@ char* my_readline(int fd) {
         }
 
         memcpy(temp + total_bytes - read_result, rd_buffer, read_result); // Copy the new data from buffer to temp
-
         rd_line_buffer = temp; // Update storage to point to the new combined data in temp
-
         if (end_line == true) { // if '\n' was found, store the rest of the buffer in leftovers
             store_leftovers(rd_buffer, read_result);   
             break;
@@ -112,10 +125,10 @@ int main(int ac, char **av)
 {
   char *str = NULL;
 
-  int fd = open("test.txt", O_RDONLY);
+  int fd = open("test2.txt", O_RDONLY);
   while ((str = my_readline(fd)) != NULL)
   {
-      printf("%s\n", str);
+      printf("%s@@", str);
       free(str);
   }
   return 0;
