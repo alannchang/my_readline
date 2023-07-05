@@ -39,20 +39,23 @@ char* my_readline(int fd) {
 
     if (leftovers != NULL) { // if we got leftovers, check for '\n'
         int leftover_bytes = -1;
-        for (int i = 0; i < strlen(leftovers); i++) {
+        // printf("strlen(leftovers) = %d|", (int)strlen(leftovers));
+        for (int i = 0; i < (int)strlen(leftovers); i++) {
             if (leftovers[i] == '\n') {
                 leftover_bytes = i;
                 break;
             }
         }
-        printf("leftover bytes: %d", leftover_bytes);
-        if (leftover_bytes > 0) {
+        // printf("leftover bytes = %d|", leftover_bytes);
+        if (leftover_bytes > -1) {
             char* leftover_temp = malloc(((leftover_bytes + 1) * sizeof(char)));
-            memcpy(leftover_temp, leftovers, leftover_bytes);
+            memcpy(leftover_temp, leftovers, leftover_bytes + 1);
             leftover_temp[leftover_bytes] = '\0';
-            leftovers = leftovers + leftover_bytes;
+            leftovers = leftovers + leftover_bytes + 1;
+            // printf("%s|", leftover_temp);
             return leftover_temp;
         } else {
+            // printf("else|");
             rd_line_buffer = leftovers;
             total_bytes = strlen(leftovers);
             leftovers = NULL;
@@ -128,7 +131,7 @@ int main(int ac, char **av)
   int fd = open("test2.txt", O_RDONLY);
   while ((str = my_readline(fd)) != NULL)
   {
-      printf("%s@@", str);
+      printf("%s\n", str);
       free(str);
   }
   return 0;
