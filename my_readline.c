@@ -6,7 +6,7 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 1000;
+int READLINE_READ_SIZE = 10;
 
 // global variable to store stuff that comes after '\n' encountered
 char* leftovers = NULL;
@@ -51,7 +51,12 @@ char* my_readline(int fd) {
             char* leftover_temp = malloc(((leftover_bytes + 1) * sizeof(char)));
             memcpy(leftover_temp, leftovers, leftover_bytes + 1);
             leftover_temp[leftover_bytes] = '\0';
-            leftovers = leftovers + leftover_bytes + 1;
+
+            size_t new_leftovers_size = strlen(leftovers + leftover_bytes + 1) + 1;
+            char* new_leftovers = malloc(new_leftovers_size * sizeof(char));
+            memcpy(new_leftovers, leftovers + leftover_bytes + 1, new_leftovers_size);
+            free(leftovers);
+            leftovers = new_leftovers;
             // printf("%s|", leftover_temp);
             return leftover_temp;
         } else {
@@ -128,7 +133,7 @@ int main(int ac, char **av)
 {
   char *str = NULL;
 
-  int fd = open("test2.txt", O_RDONLY);
+  int fd = open("test.txt", O_RDONLY);
   while ((str = my_readline(fd)) != NULL)
   {
       printf("%s\n", str);
