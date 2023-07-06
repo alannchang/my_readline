@@ -6,7 +6,7 @@
 #include <string.h>
 
 // "Number of characters read will be set by the global variable READLINE_READ_SIZE"
-int READLINE_READ_SIZE = 10;
+int READLINE_READ_SIZE = 1;
 
 // global variable to store stuff that comes after '\n' encountered
 char* leftovers = NULL;
@@ -19,7 +19,7 @@ void init_my_readline() {
     }
 }
 
-// add everything after '\n' from read buffer to leftovers variable
+// add everything after '\n' from read buffer to 'leftovers'
 void store_leftovers(char* buffer, size_t read_result) {
     size_t leftover_length = strlen(buffer) - read_result - 1;
     leftovers = malloc((leftover_length + 1) * sizeof(char));
@@ -29,7 +29,7 @@ void store_leftovers(char* buffer, size_t read_result) {
 
 char* my_readline(int fd) {
 
-    if (fd == -1) {
+    if (fd == -1) { // check for invalid file descriptor
         perror("File descriptor error");
         return NULL;
     }
@@ -38,30 +38,34 @@ char* my_readline(int fd) {
     size_t total_bytes = 0; // keep track of total
 
     if (leftovers != NULL) { // if we got leftovers, check for '\n'
+    
         int leftover_bytes = -1;
-        // printf("strlen(leftovers) = %d|", (int)strlen(leftovers));
+
         for (int i = 0; i < (int)strlen(leftovers); i++) {
             if (leftovers[i] == '\n') {
                 leftover_bytes = i;
                 break;
             }
         }
-        // printf("leftover bytes = %d|", leftover_bytes);
-        if (leftover_bytes > -1) {
+
+        if (leftover_bytes > -1) { // if '\n' found
+
+        // store everything before '\n' in leftover temp
             char* leftover_temp = malloc(((leftover_bytes + 1) * sizeof(char)));
             memcpy(leftover_temp, leftovers, leftover_bytes + 1);
             leftover_temp[leftover_bytes] = '\0';
 
+        // store everything after '\n' in leftovers
             size_t new_leftovers_size = strlen(leftovers + leftover_bytes + 1) + 1;
             char* new_leftovers = malloc(new_leftovers_size * sizeof(char));
             memcpy(new_leftovers, leftovers + leftover_bytes + 1, new_leftovers_size);
             free(leftovers);
             leftovers = new_leftovers;
-            // printf("%s|", leftover_temp);
-            return leftover_temp;
-        } else {
-            // printf("else|");
-            rd_line_buffer = leftovers;
+            return leftover_temp; // return everything before '\n'
+
+        } else { // if no '\n' found
+        // use contents of leftovers as base for rd_line_buffer
+            rd_line_buffer = leftovers; 
             total_bytes = strlen(leftovers);
             leftovers = NULL;
         }
@@ -84,7 +88,7 @@ char* my_readline(int fd) {
         
         } else if (read_result == 0) break;  // End of file reached but need to return rd_line_buffer
         rd_buffer[read_result] = '\0';
-
+ after while r
         for (int i = 0; i < read_result; i++) { // check for '\n' in read buffer
             if (rd_buffer[i] == '\n') {
                 read_result = i;
@@ -129,7 +133,7 @@ char* my_readline(int fd) {
 }
 
 
-int main(int ac, char **av)
+int main()
 {
   char *str = NULL;
 
