@@ -29,7 +29,7 @@ void store_leftovers(char* buffer, size_t read_result) {
 
 char* my_readline(int fd) {
 
-    if (fd == -1) { // check for invalid file descriptor
+    if (fd == -1) { // handle invalid file descriptor
         perror("File descriptor error");
         return NULL;
     }
@@ -38,7 +38,7 @@ char* my_readline(int fd) {
     size_t total_bytes = 0; // keep track of total
 
     if (leftovers != NULL) { // if we got leftovers, check for '\n'
-    
+
         int leftover_bytes = -1;
 
         for (int i = 0; i < (int)strlen(leftovers); i++) {
@@ -71,24 +71,26 @@ char* my_readline(int fd) {
         }
     }
     
-    char* rd_buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char)); // buffer used for read()
     bool end_line = false; // 'true' when '\n' found
+
+    char* rd_buffer = malloc((READLINE_READ_SIZE + 1) * sizeof(char)); // buffer used for read()
     if (rd_buffer == NULL) {
         perror("Memory allocation failed");
         return NULL;
     }
 
     ssize_t read_result; // number of bytes read
-    while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) {
+    while ((read_result = read(fd, rd_buffer, READLINE_READ_SIZE)) > -1) { // read in READLINE_READ_SIZE blocks
         
         if (read_result == 0 && total_bytes == 0) { // End of file reached
             free(rd_buffer);
             free(rd_line_buffer);
             return NULL;
         
-        } else if (read_result == 0) break;  // End of file reached but need to return rd_line_buffer
+        } else if (read_result == 0) break;  // End of file reached, break to return rd_line_buffer
+        
         rd_buffer[read_result] = '\0';
- after while r
+
         for (int i = 0; i < read_result; i++) { // check for '\n' in read buffer
             if (rd_buffer[i] == '\n') {
                 read_result = i;
@@ -97,7 +99,7 @@ char* my_readline(int fd) {
             }
         }
         
-        total_bytes += read_result;
+        total_bytes += read_result; 
 
         char* temp = malloc((total_bytes + 1) * sizeof(char)); // initialize temp to store the new combined data
         if (temp == NULL) {
@@ -113,7 +115,9 @@ char* my_readline(int fd) {
         }
 
         memcpy(temp + total_bytes - read_result, rd_buffer, read_result); // Copy the new data from buffer to temp
+        
         rd_line_buffer = temp; // Update storage to point to the new combined data in temp
+        
         if (end_line == true) { // if '\n' was found, store the rest of the buffer in leftovers
             store_leftovers(rd_buffer, read_result);   
             break;
@@ -127,8 +131,8 @@ char* my_readline(int fd) {
         return NULL;
     }
 
-    rd_line_buffer[total_bytes] = '\0';
-    free(rd_buffer);
+    rd_line_buffer[total_bytes] = '\0'; // null terminate string to be returned
+    free(rd_buffer); // free rd_buffer as it is no longer needed
     return rd_line_buffer;
 }
 
