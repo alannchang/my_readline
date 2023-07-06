@@ -137,15 +137,15 @@ char* my_readline(int fd) {
 }
 
 
-int main()
-{
-  char *str = NULL;
+// int main()
+// {
+//   char *str = NULL;
 
-  int fd = open("test.txt", O_RDONLY);
-  while ((str = my_readline(fd)) != NULL)
-  {
-      printf("%s\n", str);
-      free(str);
-  }
-  return 0;
-}
+//   int fd = open("test.txt", O_RDONLY);
+//   while ((str = my_readline(fd)) != NULL)
+//   {
+//       printf("%s\n", str);
+//       free(str);
+//   }
+//   return 0;
+// }
