@@ -9,12 +9,13 @@ The assignment requires that a global variable "READLINE_READ_SIZE" dictate the 
 checking for '\n' characters and checking the number of bytes read.  The malloc function was used extensively to allocate memory for the string to be returned by the my_readline function. 
 
 ## Installation
-Since a Makefile was not required for this assignment, one can simply edit the main function inside the my_readline.c file and compile to read files, stdin, redirection, etc. 
+Since a Makefile was not required for this assignment, one can compile to read files, stdin, redirection, etc. 
 
 ## Usage
-TODO - How does it work?
+The "READLINE_READ_SIZE" variable can be set to any integer greater than 0, and the my_readline function will read in READLINE_READ_SIZE chunks.  Because my_readline.c lacks a main funcion,
+a main function has to be created in order to read files, stdin, redirection, etc.  After configuring a main function, 
 ```
-./my_readline 
+./my_readline file.txt
 ```
 
 ### The Core Team
